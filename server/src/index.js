@@ -1,19 +1,33 @@
 import express from 'express';
-import bodyParser from 'body-parser';
+import { ApolloServer } from "apollo-server-express";
+import graphqlHTTP from 'express-graphql';
+//import bodyParser from 'body-parser';
+//import { createServer } from 'http';
 import dbConfig from "./config/db";
-
+import typeDefs from "./graphql/schema";
+import resolvers from "./graphql/resolvers";
+import constants from './config/constants';
+import mocks from './mocks';
 const app = express();
 
 dbConfig();
+//app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 3000;
+const server = new ApolloServer({ typeDefs, resolvers });
+server.applyMiddleware({ app });
+app.use(constants.GRAPHQL_PATH, graphqlHTTP({
+    server,
+    rootValue: global,
+    graphiql: true,
+}));
 
-app.use(bodyParser.json());
-
-app.listen(PORT, err => {
-    if(err) {
-        console.error(err);
+//const graphQLServer = createServer(app);
+mocks().then(() => {
+  app.listen(constants.PORT, err => {
+    if (err) {
+      console.error(err);
     } else {
-        console.log(`App listen to port: ${PORT}`);
+      console.log(`App running on port: ${constants.PORT}`);
     }
-})
+  });
+});
